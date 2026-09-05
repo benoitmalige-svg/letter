@@ -1,5 +1,6 @@
 // Vercel Serverless Function: POST /api/subscribe  { email }
-// Adds the subscriber to beehiiv. Secrets come from Vercel Environment Variables.
+// Adds/updates the subscriber in beehiiv and stamps a custom field "waitlist" = "yes".
+// Custom fields (unlike UTM source) DO update on existing subscribers, so this catches everyone.
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -14,7 +15,6 @@ export default async function handler(req, res) {
 
   let email = "";
   try {
-    // Vercel usually parses JSON automatically; handle both cases.
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     email = (body?.email || "").trim();
   } catch (_) {
@@ -39,6 +39,9 @@ export default async function handler(req, res) {
           reactivate_existing: true,
           send_welcome_email: false,
           utm_source: "waitlist_letter",
+          custom_fields: [
+            { name: "waitlist", value: "yes" }
+          ],
         }),
       }
     );
